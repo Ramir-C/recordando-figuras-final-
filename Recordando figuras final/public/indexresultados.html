@@ -68,8 +68,23 @@
 </head>
 <body>
   <h1>Lista de Jugadores</h1>
+  <!-- Formulario para registrar nuevos jugadores -->
+  <h2>Registrar Jugador</h2>
+  <form id="form-jugador">
+    <label for="nombre">Nombre:</label>
+    <input type="text" id="nombre" name="nombre" required>
 
+    <label for="intento">Intento:</label>
+    <input type="number" id="intento" name="intento" required>
 
+    <label for="tiempo">Tiempo (segundos):</label>
+    <input type="number" id="tiempo" name="tiempo" required>
+
+    <label for="errores">Errores:</label>
+    <input type="number" id="errores" name="errores" required>
+
+    <button type="submit">Guardar Jugador</button>
+  </form>
 
   <!-- Tabla de jugadores -->
   <table id="tabla-jugadores">
