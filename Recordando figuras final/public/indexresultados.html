@@ -3,14 +3,14 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Jugadores </title>
+  <title>Lista de Jugadores</title>
   <style>
     body {
       font-family: Arial, sans-serif;
       background: #f4f6f9;
       margin: 20px;
     }
-    h1, h2 {
+    h1 {
       text-align: center;
       color: #333;
     }
@@ -33,58 +33,16 @@
     tr:nth-child(even) {
       background: #f2f2f2;
     }
-    form {
-      width: 90%;
-      margin: 20px auto;
-      background: #fff;
-      padding: 15px;
-      border-radius: 5px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-    }
-    label {
-      display: block;
-      margin: 8px 0 4px;
-      font-weight: bold;
-    }
-    input {
-      width: 100%;
-      padding: 8px;
-      margin-bottom: 12px;
-      border: 1px solid #ccc;
-      border-radius: 4px;
-    }
-    button {
-      background: #007BFF;
-      color: white;
-      padding: 10px 15px;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-    }
-    button:hover {
-      background: #0056b3;
+    #no-jugadores {
+      text-align: center;
+      color: #666;
+      font-style: italic;
+      margin-top: 20px;
     }
   </style>
 </head>
 <body>
-  <h1>Lista de Jugadores</h1>
-  <!-- Formulario para registrar nuevos jugadores -->
-  <h2>Registrar Jugador</h2>
-  <form id="form-jugador">
-    <label for="nombre">Nombre:</label>
-    <input type="text" id="nombre" name="nombre" required>
-
-    <label for="intento">Intento:</label>
-    <input type="number" id="intento" name="intento" required>
-
-    <label for="tiempo">Tiempo (segundos):</label>
-    <input type="number" id="tiempo" name="tiempo" required>
-
-    <label for="errores">Errores:</label>
-    <input type="number" id="errores" name="errores" required>
-
-    <button type="submit">Guardar Jugador</button>
-  </form>
+  <h1>Resultados de Jugadores</h1>
 
   <!-- Tabla de jugadores -->
   <table id="tabla-jugadores">
@@ -93,7 +51,7 @@
         <th>ID</th>
         <th>Nombre</th>
         <th>Intento</th>
-        <th>Tiempo</th>
+        <th>Tiempo (s)</th>
         <th>Errores</th>
       </tr>
     </thead>
@@ -101,62 +59,45 @@
       <!-- Aquí se insertarán los jugadores -->
     </tbody>
   </table>
+  <div id="no-jugadores" style="display:none;">No hay jugadores registrados.</div>
 
   <script>
-    // Cargar jugadores desde el backend
+    // Función para cargar jugadores desde el backend
     async function cargarJugadores() {
       try {
         const response = await fetch('/users');
         const data = await response.json();
 
         const tbody = document.querySelector('#tabla-jugadores tbody');
+        const noJugadores = document.getElementById('no-jugadores');
         tbody.innerHTML = '';
 
+        if (!data.users || data.users.length === 0) {
+          noJugadores.style.display = 'block';
+          return;
+        } else {
+          noJugadores.style.display = 'none';
+        }
+
         data.users.forEach(jugador => {
-          const fila = `
-            <tr>
-              <td>${jugador.id}</td>
-              <td>${jugador.nombre}</td>
-              <td>${jugador.intento}</td>
-              <td>${jugador.tiempo}</td>
-              <td>${jugador.errores}</td>
-            </tr>
+          const fila = document.createElement('tr');
+          fila.innerHTML = `
+            <td>${jugador.id}</td>
+            <td>${jugador.nombre}</td>
+            <td>${jugador.intento}</td>
+            <td>${jugador.tiempo}</td>
+            <td>${jugador.errores}</td>
           `;
-          tbody.innerHTML += fila;
+          tbody.appendChild(fila);
         });
       } catch (err) {
         console.error('Error al cargar jugadores:', err);
       }
     }
 
-    // Guardar jugador con el formulario
-    document.getElementById('form-jugador').addEventListener('submit', async (e) => {
-      e.preventDefault();
-
-      const jugador = {
-        nombre: document.getElementById('nombre').value,
-        intento: document.getElementById('intento').value,
-        tiempo: document.getElementById('tiempo').value,
-        errores: document.getElementById('errores').value
-      };
-
-      try {
-        await fetch('/save', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(jugador)
-        });
-
-        // Recargar la tabla
-        cargarJugadores();
-        e.target.reset();
-      } catch (err) {
-        console.error('Error al guardar jugador:', err);
-      }
-    });
-
     // Cargar jugadores al abrir la página
     cargarJugadores();
   </script>
 </body>
 </html>
+
