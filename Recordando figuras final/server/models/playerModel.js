@@ -6,8 +6,8 @@ async function connectDB() {
     db = await mysql.createConnection({
         host: process.env.DB_HOST || 'localhost',
         user: process.env.DB_USER || 'root',
-        password: process.env.DB_PASSWORD || '',
-        database: process.env.DB_NAME || 'basededatos1'
+        password: process.env.DB_PASSWORD || 'LNNExntdHlbDSNuSvrlayPcrAwBrOQmw',
+        database: process.env.DB_NAME || 'railway'
     });
 
     await db.query(`
