@@ -1,0 +1,15 @@
+{
+  "name": "mi-memorama",
+  "version": "1.0.0",
+  "description": "Juego de memorama con Node, Express y MariaDB/MySQL",
+  "main": "server/app.js",
+  "scripts": {
+    "start": "node server/app.js"
+  },
+  "dependencies": {
+    "body-parser": "^2.2.0",
+    "dotenv": "^16.6.1",
+    "express": "^4.21.2",
+    "mysql2": "^3.14.5"
+  }
+}

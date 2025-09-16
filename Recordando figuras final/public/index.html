@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Memorama</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #3498db; /* Cambiar el color de fondo a azul claro */
+            margin: 0;
+            padding: 0;
+        }
+
+        h1, h2 {
+            text-align: center;
+            color: white; /* Cambiar el color del texto a blanco */
+        }
+
+        .memory-game {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .memory-card {
+            width: 100px;
+            height: 100px;
+            position: relative;
+            perspective: 1000px;
+            margin: 5px;
+        }
+
+        .memory-card-inner {
+            width: 100%;
+            height: 100%;
+            transition: transform 0.5s;
+            transform-style: preserve-3d;
+            cursor: pointer;
+        }
+
+        .memory-card.flipped .memory-card-inner {
+            transform: rotateY(180deg);
+        }
+
+        .memory-card-front,
+        .memory-card-back {
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            backface-visibility: hidden;
+        }
+
+        .memory-card-back {
+            transform: rotateY(180deg);
+        }
+
+        #result {
+            text-align: center;
+            display: none;
+        }
+
+        #restart-button {
+            display: none;
+            margin: 20px auto;
+            padding: 10px 20px;
+            background-color: #2ecc71; /* Cambiar el color de fondo del botón a verde */
+            border: none;
+            border-radius: 5px;
+            color: white; /* Cambiar el color del texto a blanco */
+            cursor: pointer;
+        }
+
+        #inicio {
+            display: block;
+            text-align: center;
+        }
+
+        #juego {
+            display: none;
+        }
+        
+        #perdiste {
+            display: none;
+            text-align: center;
+            margin-top: 20px;
+            color: red; /* Cambiar el color del texto a rojo */
+        }
+    </style>
+</head>
+
+<body>
+    <div id="inicio">
+        <h1>Recordando figuras</h1>
+        <img id="welcome-image" src="https://cdn.glitch.global/fc386927-6a5e-4fc8-8787-2beac4099216/Imagen2.png?v=1711606381705" alt="Welcome Image">
+        <p>Bienvenido al juego donde recordar es igual a ganar.</p>
+        <p>Encuentra todas las parejas de cartas.</p>
+        <input type="text" id="username" placeholder="Nombre de usuario" required>
+        <button id="start-button" onclick="startGame()">Iniciar Juego</button>
+    </div>
+    <div id="juego">
+        <div class="memory-game"></div>
+        <h2 id="result"></h2>
+        <button id="restart-button" onclick="restartGame()">Volver a Jugar</button>
+    </div>
+    <div id="perdiste">
+        <h2>¡Lo siento, has perdido!</h2>
+        <p>Inténtalo de nuevo</p>
+        <button onclick="restartGame()">Reiniciar</button>
+    </div>
+
+    <audio id="success-sound" src="https://cdn.glitch.global/6e430c3b-60be-4d4e-b53f-c8ce0fcb9707/acierto.wav?v=17116584105000"></audio>
+    <audio id="error-sound" src="https://cdn.glitch.global/6e430c3b-60be-4d4e-b53f-c8ce0fcb9707/error.wav?v=1711658404858"></audio>
+    <audio id="victory-music" src="victory.mp3"></audio>
+    <audio id="background-music" src="background-music.mp3" autoplay loop></audio>
+
+    <script>
+        const pairs = 10;
+        let flippedCards = [];
+        let isFlipping = false;
+        let errorCount = 0;
+        let startTime;
+        let intervalId;
+        let attempts = 0;
+        let timeElapsed = 0;
+
+        const images = [
+            'https://cdn.glitch.global/6e430c3b-60be-4d4e-b53f-c8ce0fcb9707/carta1.jpeg?v=1711654483836',
+            'https://cdn.glitch.global/6e430c3b-60be-4d4e-b53f-c8ce0fcb9707/carta1.jpeg?v=1711654483836',
+            'https://cdn.glitch.global/6e430c3b-60be-4d4e-b53f-c8ce0fcb9707/carta6.jpeg?v=1711654484295',
+            'https://cdn.glitch.global/6e430c3b-60be-4d4e-b53f-c8ce0fcb9707/carta6.jpeg?v=1711654484295',
+            'https://cdn.glitch.global/6e430c3b-60be-4d4e-b53f-c8ce0fcb9707/carta5.jpeg?v=1711654484758',
+            'https://cdn.glitch.global/6e430c3b-60be-4d4e-b53f-c8ce0fcb9707/carta5.jpeg?v=1711654484758',
+            'https://cdn.glitch.global/6e430c3b-60be-4d4e-b53f-c8ce0fcb9707/carta4.jpeg?v=1711654485193',
+            'https://cdn.glitch.global/6e430c3b-60be-4d4e-b53f-c8ce0fcb9707/carta4.jpeg?v=1711654485193',
+            'https://cdn.glitch.global/6e430c3b-60be-4d4e-b53f-c8ce0fcb9707/carta3.jpeg?v=1711654485592',
+            'https://cdn.glitch.global/6e430c3b-60be-4d4e-b53f-c8ce0fcb9707/carta3.jpeg?v=1711654485592',
+            'https://cdn.glitch.global/6e430c3b-60be-4d4e-b53f-c8ce0fcb9707/Imagen8.png?v=1711655154608',
+            'https://cdn.glitch.global/6e430c3b-60be-4d4e-b53f-c8ce0fcb9707/Imagen8.png?v=1711655154608',
+            'https://cdn.glitch.global/6e430c3b-60be-4d4e-b53f-c8ce0fcb9707/Imagen4.png?v=1711655155172',
+            'https://cdn.glitch.global/6e430c3b-60be-4d4e-b53f-c8ce0fcb9707/Imagen4.png?v=1711655155172',
+            'https://cdn.glitch.global/6e430c3b-60be-4d4e-b53f-c8ce0fcb9707/Imagen5.png?v=1711655155689',
+            'https://cdn.glitch.global/6e430c3b-60be-4d4e-b53f-c8ce0fcb9707/Imagen5.png?v=1711655155689',
+            'https://cdn.glitch.global/6e430c3b-60be-4d4e-b53f-c8ce0fcb9707/Imagen6.png?v=1711655156098',
+            'https://cdn.glitch.global/6e430c3b-60be-4d4e-b53f-c8ce0fcb9707/Imagen6.png?v=1711655156098',
+            'https://cdn.glitch.global/6e430c3b-60be-4d4e-b53f-c8ce0fcb9707/Imagen7.png?v=1711655156552',
+            'https://cdn.glitch.global/6e430c3b-60be-4d4e-b53f-c8ce0fcb9707/Imagen7.png?v=1711655156552',
+        ];
+
+        function startGame() {
+            const username = document.getElementById('username').value.trim();
+            if (!username) {
+                alert('Por favor, introduce tu nombre de usuario.');
+                return;
+            }
+            attempts = 0;
+            timeElapsed = 0;
+            shuffle(images);
+            generateCards();
+            startTimer();
+            document.getElementById('inicio').style.display = 'none';
+            document.getElementById('juego').style.display = 'block';
+            document.getElementById('username').disabled = true;
+            document.getElementById('start-button').disabled = true;
+        }
+
+        function generateCards() {
+            const memoryGame = document.querySelector('.memory-game');
+            for (let i = 0; i < pairs * 2; i++) {
+                const card = document.createElement('div');
+                card.classList.add('memory-card');
+                card.dataset.name = images[i];
+                card.addEventListener('click', flipCard);
+                const cardInner = document.createElement('div');
+                cardInner.classList.add('memory-card-inner');
+                const cardFront = document.createElement('img');
+                cardFront.classList.add('memory-card-front');
+                cardFront.src = 'https://cdn.glitch.global/fc386927-6a5e-4fc8-8787-2beac4099216/Imagen2.png?v=1711606381705'; // URL de la imagen del dorso de la carta
+                const cardBack = document.createElement('img');
+                cardBack.classList.add('memory-card-back');
+                cardBack.src = images[i]; // URL de la imagen frontal de la carta
+                cardInner.appendChild(cardFront);
+                cardInner.appendChild(cardBack);
+                card.appendChild(cardInner);
+                memoryGame.appendChild(card);
+            }
+        }
+
+        function flipCard() {
+            if (isFlipping || flippedCards.length === 2) return; // Evita que se procesen más de dos cartas a la vez
+
+            this.classList.add('flipped');
+            flippedCards.push(this);
+
+            if (flippedCards.length === 2) {
+                isFlipping = true;
+                setTimeout(checkMatch, 1000);
+            } else if (flippedCards.length === 3) {
+                // Si ya hay dos cartas volteadas y se selecciona una tercera,
+                // oculta las dos cartas previamente volteadas antes de voltear la tercera.
+                flippedCards.forEach(card => {
+                    card.classList.remove('flipped');
+                });
+                flippedCards = [this]; // Agregar la carta actual a las cartas volteadas
+                setTimeout(() => {
+                    flippedCards.forEach(card => {
+                        card.classList.add('flipped');
+                    });
+                    isFlipping = false;
+                }, 1); // Tiempo de espera mínimo
+            }
+        }
+
+        function checkMatch() {
+            const [card1, card2] = flippedCards;
+            const img1 = card1.dataset.name;
+            const img2 = card2.dataset.name;
+
+            if (img1 === img2) {
+                card1.removeEventListener('click', flipCard);
+                card2.removeEventListener('click', flipCard);
+                flippedCards = [];
+                checkWin();
+                playSound('success');
+            } else {
+                setTimeout(() => {
+                    card1.classList.remove('flipped');
+                    card2.classList.remove('flipped');
+                    flippedCards = [];
+                    errorCount++;
+                    checkLoss(); // Verificar si se ha perdido el juego
+                    if (errorCount === 20) {
+                        flipAllCards();
+                        errorCount = 0;
+                    }
+                    playSound('error');
+                }, 500);
+            }
+            isFlipping = false;
+            attempts++;
+        }
+
+        function checkWin() {
+            const remainingCards = document.querySelectorAll('.memory-card:not(.flipped)');
+            if (remainingCards.length === 0) {
+                clearInterval(intervalId);
+                const endTime = new Date();
+                const timeDiff = endTime - startTime;
+                const seconds = Math.floor(timeDiff / 1000);
+                timeElapsed = seconds;
+                const minutes = Math.floor(seconds / 60);
+                const formattedTime = `${minutes} minutos y ${seconds % 60} segundos`;
+                document.getElementById('result').innerText = `¡Felicidades, has ganado! Tiempo: ${formattedTime}`;
+                document.getElementById('result').style.display = 'block';
+                document.getElementById('restart-button').style.display = 'block';
+                saveData();
+                playMusic('victory');
+            }
+        }
+      
+      
+        function flipAllCards() {
+            const cards = document.querySelectorAll('.memory-card');
+            cards.forEach(card => {
+                card.classList.add('flipped');
+                setTimeout(() => {
+                    card.classList.remove('flipped');
+                }, 1000);
+            });
+        }
+
+        function shuffle(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+        }
+
+        function startTimer() {
+            startTime = new Date();
+            intervalId = setInterval(updateTimer, 1000);
+        }
+
+        function updateTimer() {
+            const currentTime = new Date();
+            const timeDiff = currentTime - startTime;
+            const seconds = Math.floor(timeDiff / 1000);
+            const minutes = Math.floor(seconds / 60);
+            const formattedTime = `${minutes.toString().padStart(2, '0')}:${(seconds % 60).toString().padStart(2, '0')}`;
+            document.getElementById('timer').innerText = formattedTime;
+        }
+
+        function playSound(soundType) {
+            const sound = document.getElementById(soundType + '-sound');
+            sound.currentTime = 0;
+            sound.play();
+        }
+
+        function playMusic(musicType) {
+            const music = document.getElementById(musicType + '-music');
+            music.currentTime = 0;
+            music.play();
+        }
+
+        function checkLoss() {
+            const remainingCards = document.querySelectorAll('.memory-card:not(.flipped)');
+            if (errorCount === 10 && remainingCards.length > 0) { // Verificar si se ha alcanzado el límite de errores y todavía quedan cartas sin voltear
+                clearInterval(intervalId);
+                document.getElementById('perdiste').style.display = 'block';
+                saveData();
+            }
+        }
+
+          
+      
+        function restartGame() {
+            const memoryGame = document.querySelector('.memory-game');
+            const cards = memoryGame.querySelectorAll('.memory-card');
+            cards.forEach(card => {
+                card.classList.remove('flipped'); // Remover la clase 'flipped' de todas las cartas
+            });
+            memoryGame.innerHTML = '';
+            document.getElementById('result').style.display = 'none';
+            document.getElementById('restart-button').style.display = 'none';
+            document.getElementById('perdiste').style.display = 'none'; // Ocultar la pantalla de pérdida
+            clearInterval(intervalId);
+            document.getElementById('inicio').style.display = 'block';
+            document.getElementById('juego').style.display = 'none';
+            document.getElementById('username').disabled = false;
+            document.getElementById('start-button').disabled = false;
+            flippedCards = []; // Limpiar la lista de cartas volteadas
+            errorCount = 0; // Reiniciar el contador de errores
+        }
+
+function saveData() {
+    const username = document.getElementById('username').value.trim();
+    const currentTime = new Date();
+    const timeDiff = currentTime - startTime;
+    const seconds = Math.floor(timeDiff / 1000);
+    const gameData = {
+        nombre: username,
+        intento: attempts,
+        tiempo: seconds,
+        errores: errorCount
+    };
+
+    fetch('/save', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(gameData)
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Error al guardar los datos');
+        }
+        console.log('Datos del juego guardados correctamente:', gameData);
+    })
+    .catch(error => {
+        console.error('Error al guardar los datos:', error);
+    });
+}
+
+    </script>
+</body>
+
+  
+  </html>
